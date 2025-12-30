@@ -35,3 +35,5 @@ jobs:
           external_repository: liujingyi1/jingyil.github.io
           publish_branch: gh-pages
           force_orphan: true
+          user_name: "github-actions[bot]"
+          user_email: "github-actions[bot]@users.noreply.github.com"
