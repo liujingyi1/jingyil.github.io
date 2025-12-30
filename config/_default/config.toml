@@ -30,3 +30,7 @@ enableRobotsTXT = true
   category = "categories"
   tag = "tags"
 
+ignoreFiles = [
+  "themes/book/exampleSite/.*",
+  "themes/papermod/exampleSite/.*"
+]
