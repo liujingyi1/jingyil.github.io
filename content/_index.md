@@ -10,6 +10,18 @@ About android and linux technology
 
 [{{< badge style="default" title="License" value="MIT" >}}](https://github.com/alex-shpak/hugo-book/blob/main/LICENSE)
 
+<!--<iframe src="https://asciinema.org/a/e8bNi9pRnohR5y7Oi1qpZwSXd" id="asciicast-iframe-AbCdEfGh123456" scrolling="no" style="width: 50%; overflow: hidden;" allowfullscreen="true"></iframe> -->
+
+<!--margin-left: 1vw; -->
+
+<div style="max-width: 600px; ">
+{{< asciinema
+  cast="https://asciinema.org/a/e8bNi9pRnohR5y7Oi1qpZwSXd.cast"
+  loop=true
+  autoplay=true
+  speed=1.5 >}}
+</div>
+
 {{<button href="/docs/">}}Explore{{</button>}}
 
 </div>
