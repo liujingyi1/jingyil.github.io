@@ -324,3 +324,183 @@ class BnInterface : public INTERFACE, public BBinder {
 │    ... 原路返回给客户端                                                   │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
+
+**一个Native层手动编写AIDL例子**
+
+1.  **接口定义文件（IMyService.h）**
+
+```cpp
+// IMyService.h
+#pragma once
+
+#include <binder/IInterface.h>
+#include <binder/Parcel.h>
+
+namespace android {
+
+// 主接口
+class IMyService : public IInterface {
+public:
+    DECLARE_META_INTERFACE(MyService);  // 必须的宏
+
+    // 事务码
+    enum {
+        TRANSACTION_addNumbers = IBinder::FIRST_CALL_TRANSACTION,
+    };
+
+    // 接口方法
+    virtual int32_t addNumbers(int32_t a, int32_t b) = 0;
+};
+
+// 服务端基类
+class BnMyService : public BnInterface<IMyService> {
+public:
+    virtual status_t onTransact(uint32_t code,
+                               const Parcel& data,
+                               Parcel* reply,
+                               uint32_t flags = 0) override;
+};
+
+// 客户端代理类
+class BpMyService : public BpInterface<IMyService> {
+public:
+    explicit BpMyService(const sp<IBinder>& impl);
+    virtual int32_t addNumbers(int32_t a, int32_t b) override;
+};
+
+} // namespace android
+```
+
+2.  **接口实现文件（IMyService.cpp）**
+
+```cpp
+
+// IMyService.cpp
+#include "IMyService.h"
+
+namespace android {
+
+// 1. 实现 META_INTERFACE 宏
+IMPLEMENT_META_INTERFACE(MyService, "android.os.IMyService");
+
+// 2. Bn端（服务端）的onTransact实现
+status_t BnMyService::onTransact(uint32_t code,
+                                const Parcel& data,
+                                Parcel* reply,
+                                uint32_t flags) {
+    switch (code) {
+        case TRANSACTION_addNumbers: {
+            // 安全检查
+            CHECK_INTERFACE(IMyService, data, reply);
+            
+            // 读取参数
+            int32_t a = data.readInt32();
+            int32_t b = data.readInt32();
+            
+            // 调用实际方法
+            int32_t result = addNumbers(a, b);
+            
+            // 写回结果
+            reply->writeInt32(result);
+            return NO_ERROR;
+        }
+        default:
+            return BBinder::onTransact(code, data, reply, flags);
+    }
+}
+
+// 3. Bp端（客户端）构造函数
+BpMyService::BpMyService(const sp<IBinder>& impl)
+    : BpInterface<IMyService>(impl) {}
+
+// 4. Bp端方法实现
+int32_t BpMyService::addNumbers(int32_t a, int32_t b) {
+    Parcel data, reply;
+    
+    // 写入接口标识符
+    data.writeInterfaceToken(IMyService::getInterfaceDescriptor());
+    
+    // 序列化参数
+    data.writeInt32(a);
+    data.writeInt32(b);
+    
+    // 调用远程方法
+    remote()->transact(TRANSACTION_addNumbers, data, &reply);
+    
+    // 读取结果
+    return reply.readInt32();
+}
+
+} // namespace android
+```
+
+3.  **AIDL 文件（IMyService.aidl）- 对比参考**
+
+```cpp
+// IMyService.aidl
+package android.os;
+
+interface IMyService {
+    int addNumbers(int a, int b);
+}
+
+// AIDL会生成类似的代码，但结构不同
+```
+
+4. **服务端实现示例**
+
+```cpp
+// MyServiceImpl.cpp
+#include "IMyService.h"
+
+namespace android {
+
+// 具体服务实现
+class MyServiceImpl : public BnMyService {
+public:
+    int32_t addNumbers(int32_t a, int32_t b) override {
+        return a + b;  // 实际业务逻辑
+    }
+};
+
+// 服务注册
+void registerMyService() {
+    sp<IServiceManager> sm = defaultServiceManager();
+    sm->addService(String16("myservice"), new MyServiceImpl());
+}
+
+} // namespace android
+```
+
+5. **客户端调用示例**
+
+```cpp
+// ClientExample.cpp
+#include <binder/IServiceManager.h>
+#include "IMyService.h"
+
+using namespace android;
+
+int main() {
+    // 1. 获取服务管理器
+    sp<IServiceManager> sm = defaultServiceManager();
+    
+    // 2. 获取服务
+    sp<IBinder> binder = sm->getService(String16("myservice"));
+    if (binder == nullptr) {
+        // 服务不存在
+        return -1;
+    }
+    
+    // 3. 转换为接口（这里会创建 BpMyService）
+    sp<IMyService> service = interface_cast<IMyService>(binder);
+    
+    // 4. 调用方法
+    int32_t result = service->addNumbers(5, 3);
+    
+    // 5. 使用结果
+    printf("Result: %d\n", result);  // 输出: Result: 8
+    
+    return 0;
+}
+```
