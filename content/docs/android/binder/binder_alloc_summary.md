@@ -1,3 +1,16 @@
+---
+title: "Binder 内存分配"
+weight: 4
+# bookFlatSection: false
+# bookToc: true
+# bookHidden: false
+# bookCollapseSection: false
+# bookComments: false
+# bookSearchExclude: false
+# bookHref: ''
+# bookIcon: ''
+---
+
 # Binder 内存分配器（binder_alloc）流程总结
 
 ## 核心数据结构关系
